@@ -16,7 +16,7 @@ public class MopData implements DataOperator {
 	public MOP mop;
 	public AProblem problem;
 
-	public String DELIMITER = "$";
+	public String DELIMITER = "!";
 
 	public void setDelimiter(String delimiter) {
 		DELIMITER = delimiter;
@@ -45,7 +45,7 @@ public class MopData implements DataOperator {
 		col.add(StringJoin.join(",",subProblem.fixWeight));
 		col.add(String.valueOf(subProblem.objectiveDimesion));
 		col.add(StringJoin.join(",",subProblem.idealPoint));
-		return StringJoin.join(" ",col);
+		return StringJoin.join("_",col);
 	}
 
 	public static int[] IntegerList2IntArray(List<Integer> l) {
@@ -101,7 +101,7 @@ public class MopData implements DataOperator {
 
 	// subProblem 's str transfer to SOP
 	public void str2Sop(int i,String sopStr) throws WrongRemindException {
-		String[] ss = sopStr.split(" ");
+		String[] ss = sopStr.split("_");
 		if(11 != ss.length) throw new WrongRemindException("Wrong str2Sop");
 		MoChromosome ind = new CMoChromosome();
 		ind.genes = StringJoin.decodeDoubleArray(",",ss[0]);
@@ -122,7 +122,7 @@ public class MopData implements DataOperator {
 
 	// subProblem 's str transfer to SOP
 	public static SOP str2Sop(String sopStr) throws WrongRemindException {
-		String[] ss = sopStr.split(" ");
+		String[] ss = sopStr.split("_");
 		if(11 != ss.length) throw new WrongRemindException("Wrong str2Sop");
 		MoChromosome ind = new CMoChromosome();
 		ind.genes = StringJoin.decodeDoubleArray(",",ss[0]);
@@ -174,13 +174,21 @@ public class MopData implements DataOperator {
 	@Override
 	public void str2Mop(String popStr) throws WrongRemindException {
 		String[] ss = popStr.split(DELIMITER);
-		for(int i = 0 ; i < ss.length; i ++) {
+		// wrong in -1 before . Nov 26
+		SOP sop = null;
+		SOP[] sops = new SOP[ss.length-1];
+		for(int i = 0 ; i < ss.length ; i ++) {
 			String[] s = ss[i].split(" ");
 			if("111111111".equals(s[0])) {
 				str2MopAtr(s[1]);
 			} else {
-				mop.sops.add(str2Sop(ss[i]));
+				sop = str2Sop(ss[i]);
+				sops[sop.sectorialIndex] = sop;
+				//mop.sops.add(str2Sop(ss[i]));
 			}
+		}
+		for(int i = 0 ; i < sops.length; i ++) {
+			mop.sops.add(sops[i]);
 		}
 	}
 	

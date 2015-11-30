@@ -14,7 +14,8 @@ jar -cvf CheaSp.jar .
 export HADOOP_CONF_DIR=/home/laboratory/hadoop-2.7.1/etc/hadoop
 #spark-submit --master yarn-client --name JavaWordCount --class practise.JavaWordCount --executor-memory 1G --total-executor-cores 2 ./JavaWordCount.jar hdfs://master/input/
 #spark-submit --master spark://master:7077 --jars /home/laboratory/spark-1.5.1-bin-hadoop2.6/lib/spark-assembly-1.5.1-hadoop2.6.0.jar --name CheaSp --class sp.CheaSp --executor-memory 1G --total-executor-cores 4 ./CheaSp.jar 
-spark-submit --master spark://master:7077 --jars /home/laboratory/spark-1.5.1-bin-hadoop2.6/lib/spark-assembly-1.5.1-hadoop2.6.0.jar --name CheaSp --class sp.CheaSp --executor-memory 1G --total-executor-cores 2 ./CheaSp.jar 
+#spark-submit --master spark://master:7077 --jars /home/laboratory/spark-1.5.1-bin-hadoop2.6/lib/spark-assembly-1.5.1-hadoop2.6.0.jar --name CheaSp --class sp.CheaSp --executor-memory 1G --total-executor-cores 2 ./CheaSp.jar 
+spark-submit --master spark://master:7077 --jars /home/laboratory/spark-1.5.1-bin-hadoop2.6/lib/spark-assembly-1.5.1-hadoop2.6.0.jar --name CheaSp --class sp.CheaSp --executor-memory 1G --total-executor-cores 1 ./CheaSp.jar 
 
 #spark-submit --master yarn-cluster --jars /home/laboratory/spark-1.5.1-bin-hadoop2.6/lib/spark-assembly-1.5.1-hadoop2.6.0.jar --name CheaSp --class sp.CheaSp --executor-memory 1G --executor-cores 2 ./CheaSp.jar 
 #hdfs dfs -mkdir practise

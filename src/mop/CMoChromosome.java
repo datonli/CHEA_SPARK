@@ -1,5 +1,7 @@
 package mop;
 
+import utilities.StringJoin;
+
 import problems.AProblem;
 //import org.apache.commons.Math.random.RandomGenerator;
 
@@ -68,7 +70,7 @@ public class CMoChromosome extends MoChromosome {
 
 	//public double[] calVObj(double[] idealPoint,int hyperplaneIntercept) { public int[] calVObj(double[] idealPoint,int hyperplaneIntercept) {
 		//double[] vValue = new double[objectiveDimesion];
-	public int[] calVObj(double[] idealPoint,int hyperplaneIntercept){
+	public int[] calVObj(double[] idealPoint,int hyperplaneIntercept) {
 		int[] vValue = new int[objectiveDimesion];
 		double[] normailizedf = calNormailize(idealPoint,hyperplaneIntercept);
 		boolean[] isCompleteBit = new boolean[objectiveDimesion];
@@ -83,7 +85,7 @@ public class CMoChromosome extends MoChromosome {
 		for (int i = 0; i < objectiveDimesion; i ++) {
 			lowDif[i] = (double)Math.floor(normailizedf[i]) - normailizedf[i];
 			upDif[i] = 1.0 + lowDif[i];
-			selectData = (-lowDif[i]) < upDif[i] ? -lowDif[i] : upDif[i];
+			selectData = (-lowDif[i]) < upDif[i] ? (-lowDif[i]) : upDif[i];
 			if ( minValue > selectData) {
 				minIndex = i;
 				minValue = selectData;
@@ -119,12 +121,14 @@ public class CMoChromosome extends MoChromosome {
 				}
 			}
 		}
+		/*
 		for(int i = 0; i < objectiveDimesion; i ++) {
 			isCompleteBit[i] = false;
 			lowDif[i] = 0;
 			upDif[i] = 0;
 			normailizedf[i] = 0;
 		}
+		*/
 		return vValue;
 	}
 
@@ -142,6 +146,7 @@ public class CMoChromosome extends MoChromosome {
 		int[] vObj;
 		vObj = calVObj(idealPoint,hyperplaneIntercept);
 		belongSubproblemIndex = getIndexFromVObj(vObj,hyperplaneIntercept);
+		//System.out.println("vObj = " + StringJoin.join(" ",vObj) + ", belongSubproblemIndex = " + belongSubproblemIndex);
 	}
 
 	public int getIndexFromVObj(int[] vObj, int hyperplaneIntercept) {

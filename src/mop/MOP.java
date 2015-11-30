@@ -28,6 +28,7 @@ public abstract class MOP {
 	public double[] idealPoint;
 	public double[] referencePoint;
 
+	public int[] coordinate;
 
 	public int sizeSubpOnEdge;
 	public List<Integer> subpIndexOnEdge;
@@ -100,5 +101,6 @@ public abstract class MOP {
 	public abstract double tourSelectionHVDifference(int p,List<SOP> sops);
 	//public abstract void savePopulation(List<SOP> sops,String fileName);
 	public abstract void write2File(String fileName) throws IOException;
+	public abstract void writeAll2File(String fileName) throws IOException;
 	public abstract void updateFixWeight(SOP subProblem,boolean delivery);
 }

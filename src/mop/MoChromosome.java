@@ -28,12 +28,21 @@ public abstract class MoChromosome {
 
 	public void copyTo(MoChromosome copyto) {
 		//copyto.fitnessValue = this.fitnessValue;
+		copyto.objectiveDimesion = this.objectiveDimesion;
+		copyto.genesDimesion = this.genesDimesion;
+		copyto.hyperplaneIntercept = this.hyperplaneIntercept;
 		copyto.kValue = this.kValue;
 		copyto.belongSubproblemIndex = this.belongSubproblemIndex;
 		System.arraycopy(objectiveValue, 0, copyto.objectiveValue, 0,
 				objectiveValue.length);
 		System.arraycopy(genes, 0, copyto.genes, 0,
 				genes.length);
+		/*
+		for(int i = 0 ; i < this.range.length; i ++) {
+			System.arraycopy(range[i], 0, copyto.range[i], 0,
+				range[i].length);
+		}
+		*/
 	}
 
 	public abstract double parameterDistance(MoChromosome another);
