@@ -28,6 +28,10 @@ public abstract class MOP {
 	public double[] idealPoint;
 	public double[] referencePoint;
 
+	//add at Dec. 1 for partition method
+	public int[] partitionArr;
+	public List<int[]> partitions;
+
 	public int[] coordinate;
 
 	public int sizeSubpOnEdge;
@@ -90,6 +94,9 @@ public abstract class MOP {
         return volume;	
 	}
 
+	public abstract List<int[]> indexRangePartition(double p,int partitionNum);
+	public abstract void initPartition(int partitionNum);
+	public abstract void setPartitionArr(int i);
 	public abstract void updateSopIdealPoint();
 	public abstract void updatePop(int itertions);
 	public abstract void initNeighbour(int neighbourNum);

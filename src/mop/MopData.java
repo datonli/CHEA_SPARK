@@ -63,7 +63,6 @@ public class MopData implements DataOperator {
 		}
 		return l;
 	}
-
 	public String mopAtr2Str() {
 		List<String> col = new ArrayList<String>(mop.popSize + 1);
 		col.add(String.valueOf(mop.popSize));
@@ -83,6 +82,28 @@ public class MopData implements DataOperator {
 		col.add(String.valueOf(mop.objectiveDimesion));
 		return StringJoin.join("_",col);
 	}
+/*
+	public String mopAtr2Str() {
+		List<String> col = new ArrayList<String>(mop.popSize + 1);
+		col.add(String.valueOf(mop.popSize));
+		col.add(String.valueOf(mop.hyperplaneIntercept));
+		col.add(String.valueOf(mop.neighbourNum));
+		col.add(String.valueOf(mop.perIntercept));
+		List<String> tmp = new ArrayList<String>();
+		for(int i = 0 ; i < mop.anchorPoint.length; i ++) {
+			tmp.add(StringJoin.join(",",mop.anchorPoint[i]));
+		}
+		col.add(StringJoin.join("#",tmp));
+		col.add(StringJoin.join("#",mop.trueNadirPoint));
+		col.add(StringJoin.join("#",mop.idealPoint));
+		col.add(StringJoin.join("#",mop.referencePoint));
+		col.add(String.valueOf(mop.sizeSubpOnEdge));
+		col.add(StringJoin.join("#",IntegerList2IntArray(mop.subpIndexOnEdge)));
+		col.add(String.valueOf(mop.objectiveDimesion));
+		col.add(StringJoin.join("#",mop.partitionArr));
+		return StringJoin.join("_",col);
+	}
+	*/
 
 	// mop transfer to String popStr Nov 22
 	@Override
@@ -140,8 +161,6 @@ public class MopData implements DataOperator {
 		return sop;
 	}
 
-
-
 	// if s[0] == 111111111 after split " ", then is must be MOP's Atr part Nov 22
 	public void str2MopAtr(String str) throws WrongRemindException {
 		String[] ss = str.split("_");
@@ -171,6 +190,38 @@ public class MopData implements DataOperator {
 		mop.objectiveDimesion = Integer.parseInt(ss[10]);
 	}
 
+
+/*
+	// if s[0] == 111111111 after split " ", then is must be MOP's Atr part Nov 22
+	public void str2MopAtr(String str) throws WrongRemindException {
+		String[] ss = str.split("_");
+		if(12 != ss.length) throw new WrongRemindException("Wrong str2MopAtr");
+		mop.popSize = Integer.parseInt(ss[0]);
+		mop.hyperplaneIntercept = Integer.parseInt(ss[1]);
+		mop.neighbourNum = Integer.parseInt(ss[2]);
+		mop.perIntercept = Double.parseDouble(ss[3]);
+		int r = 0;
+		int c = 0;
+		String[] anchorPointR = ss[4].split("#");
+		r = anchorPointR.length;
+		c = anchorPointR[0].split(",").length;
+		double[][] a = new double[r][c];
+		for(int i = 0 ; i < r; i ++) {
+			String[] ap = anchorPointR[i].split(",");
+			for(int j = 0; j < c ; j ++) {
+				a[i][j] = Double.parseDouble(ap[j]);
+			}
+		}
+		mop.anchorPoint = a;
+		mop.trueNadirPoint = StringJoin.decodeDoubleArray("#",ss[5]);
+		mop.idealPoint = StringJoin.decodeDoubleArray("#",ss[6]);
+		mop.referencePoint = StringJoin.decodeDoubleArray("#",ss[7]);
+		mop.sizeSubpOnEdge = Integer.parseInt(ss[8]);
+		mop.subpIndexOnEdge = IntArray2IntegerList(StringJoin.decodeIntArray("#",ss[9]));
+		mop.objectiveDimesion = Integer.parseInt(ss[10]);
+		mop.partitionArr= StringJoin.decodeIntArray("#",ss[11]);
+	}
+*/
 	@Override
 	public void str2Mop(String popStr) throws WrongRemindException {
 		String[] ss = popStr.split(DELIMITER);
@@ -184,7 +235,6 @@ public class MopData implements DataOperator {
 			} else {
 				sop = str2Sop(ss[i]);
 				sops[sop.sectorialIndex] = sop;
-				//mop.sops.add(str2Sop(ss[i]));
 			}
 		}
 		for(int i = 0 ; i < sops.length; i ++) {

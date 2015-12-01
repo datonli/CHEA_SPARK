@@ -72,8 +72,6 @@ public class CheaSp {
 		SparkConf sparkConf = new SparkConf().setAppName("chea spark");
 		JavaSparkContext cxt = new JavaSparkContext(sparkConf);
 
-				//JavaRDD<String> pop = cxt.parallelize(Arrays.asList(mopStr));
-
 		long startTime = System.currentTimeMillis();
 		List<String> pStr = new ArrayList<String>();
 		List<String> mopList = new ArrayList<String>();
@@ -82,8 +80,17 @@ public class CheaSp {
 			System.out.println("The " + i + "th time!");
 			//Thread.sleep(2500);
 			pStr.clear();
+
+			// Dec 1
+			//mopData.str2Mop(mopStr);
+			//mopData.mop.initPartition(writeTime);
 			for(int j = 0; j < writeTime; j ++) {
 				//System.out.println("writeTime is " + j );
+					
+				//Dec 1
+				//mopData.mop.setPartition(j);
+				//mopStr = mopData.mop2Str();
+
 				pStr.add(mopStr);
 			}
 			//System.out.println("mopStr is  : \n" + mopStr );

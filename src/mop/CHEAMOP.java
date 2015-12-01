@@ -33,13 +33,42 @@ public class CHEAMOP extends MOP{
 		objectiveDimesion = this.objectiveDimesion;
 		allocate();
 	}
-	
+
+    public List<int[]> indexRangePartition(double p,int partitionNum) {
+        int increase =(int)(p*popSize);
+        int part = (int)(popSize/partitionNum);
+        List<int[]> partitions = new ArrayList<int[]>(partitionNum);
+        int index = 0 ;
+        for(int i = 0; i < partitionNum; i ++) {
+            if(0 == i) ;
+            else if(partitionNum - 1 == i) index = popSize - (part + increase);                                                                                                                                    
+            else index -= increase/2;
+            int[] arr = new int[part + increase];                                                                                                                                                                  
+            for(int j = 0; j < part + increase; j ++) {
+                    arr[j] = index;
+                    index ++;
+            }
+            partitions.add(arr);
+        }
+        return partitions;
+    }
 
 	// init all data struct need to initial Nov 18
 	public void initial() {
 		initPopulation();
 		initNeighbour(neighbourNum);
+
+		partitionArr = indexRangePartition(0.05,1).get(0);
+		
 		//after this part , next would be step 2 Nov 19
+	}
+
+	public void initPartition(int partitionNum) {
+		partitions = indexRangePartition(0.05,partitionNum);
+	}
+
+	public void setPartitionArr(int i) {
+		partitionArr = partitions.get(i);
 	}
 
     // initial the neighbour point for neighbour's subProblems. Nov 11.
@@ -227,7 +256,40 @@ public class CHEAMOP extends MOP{
 		}
 	}
 
+/*
+    // tour select two points as parents for reproduction.  Nov 11
+    public int tourSelectionHV(List<SOP> sops) {
+        int p1 = (int)(PRNG.nextDouble(0,1) * partitionArr.length);
+        int p2 = (int)(PRNG.nextDouble(0,1) * partitionArr.length);
+        double hv1 = tourSelectionHVDifference(partitionArr[p1],sops);
+        double hv2 = tourSelectionHVDifference(partitionArr[p2],sops);
+        if(hv1 >= hv2) return partitionArr[p1];
+        else return partitionArr[p2];
+    }
 
+    public double tourSelectionHVDifference(int p,List<SOP> sops){
+            int num = 0 ;
+            int index ;
+            double hvSide = 0.0;
+            double hvDifference = 0.0;
+            
+            // need to add a sub-problem class , CHEA must have a sub problem  Nov 13
+                     SOP subProblem = sops.get(p);
+            int subProblemNeighbourSize  = subProblem.neighbour.size();
+            double hv0 = getHyperVolume(sops.get(p).ind, referencePoint);
+            for(int i = 0 ; i < subProblemNeighbourSize; i ++) {
+                SOP sop = sops.get(subProblem.neighbour.get(i).intValue());
+                if( sop.sectorialIndex == sop.ind.belongSubproblemIndex) {
+                    hvSide = getHyperVolume(sop.ind, referencePoint);
+                    hvDifference += (hv0 - hvSide);
+                    num ++;
+                }
+            }
+            if(num != 0) hvDifference = hvDifference/num;
+            return hvDifference;
+    }
+
+	*/
 
     // tour select two points as parents for reproduction.  Nov 11
     public int tourSelectionHV(List<SOP> sops) {
@@ -311,20 +373,21 @@ public class CHEAMOP extends MOP{
 			evolutionTourSelect2();
 		}
 	}
+/*	
 
-	
 	public void evolutionTourSelect2() {
         boolean isUpdate = false;
         int len = 0 ;
 		MoChromosome offSpring ;
 		//MoChromosome tmp;
         // need to add a part about calculating the IGD every 25 gen or 10 gen Nov 11
-        for(int i = 0 ;i < popSize; i ++){
+		int partitionSize = partitionArr.length;
+        for(int i = 0 ;i < partitionSize; i ++){
             // this is MOEAD part ; delete evolveNewInd(i);
             // select two indivduals to reproduce a new offspring. Nov 11
             int parentIndex1 ;
             int parentIndex2 ;
-            int b = len % (popSize/7); 
+            int b = len % (partitionSize/7); 
             if(b < sizeSubpOnEdge) {
                 parentIndex1 =  subpIndexOnEdge.get(b).intValue();
 				//System.out.println("subpIndexOnEdge 's " + b + " = " + parentIndex1);
@@ -332,10 +395,6 @@ public class CHEAMOP extends MOP{
                 parentIndex1 = tourSelectionHV(sops);
             }
             parentIndex2 = tourSelectionHV(sops);
-			/*
-			parentIndex1 = (int)PRNG.nextDouble(0,1)*popSize;
-			parentIndex2 = (int)PRNG.nextDouble(0,1)*popSize;
-			*/
             offSpring = new CMoChromosome();
 			offSpring.hyperplaneIntercept = hyperplaneIntercept;
             offSpring.crossover((MoChromosome)sops.get(parentIndex1).ind,(MoChromosome)sops.get(parentIndex2).ind);
@@ -350,7 +409,43 @@ public class CHEAMOP extends MOP{
 			}
             len ++; 
         }
+	}
+*/
 
+	public void evolutionTourSelect2() {
+        boolean isUpdate = false;
+        int len = 0 ;
+		MoChromosome offSpring ;
+		//MoChromosome tmp;
+        // need to add a part about calculating the IGD every 25 gen or 10 gen Nov 11
+		//int partitionSize = partitionArr.length;
+        for(int i = 0 ;i < popSize; i ++){
+            // this is MOEAD part ; delete evolveNewInd(i);
+            // select two indivduals to reproduce a new offspring. Nov 11
+            int parentIndex1 ;
+            int parentIndex2 ;
+            int b = len % (popSize/7); 
+            if(b < sizeSubpOnEdge) {
+                parentIndex1 =  subpIndexOnEdge.get(b).intValue();
+				//System.out.println("subpIndexOnEdge 's " + b + " = " + parentIndex1);
+            } else {
+                parentIndex1 = tourSelectionHV(sops);
+            }
+            parentIndex2 = tourSelectionHV(sops);
+            offSpring = new CMoChromosome();
+			offSpring.hyperplaneIntercept = hyperplaneIntercept;
+            offSpring.crossover((MoChromosome)sops.get(parentIndex1).ind,(MoChromosome)sops.get(parentIndex2).ind);
+            offSpring.mutate(1d/offSpring.genesDimesion);
+            
+            offSpring.evaluate(problem);
+			if(updateExtremePoint(offSpring)) updatePartition();
+            //updatePoints(offSpring);
+            offSpring.objIndex(idealPoint,hyperplaneIntercept);
+			if(null != (offSpring = hyperVolumeCompareSectorialGrid(offSpring))) {
+				//updateFixWeight(sops.get(offSpring.belongSubproblemIndex),true);
+			}
+            len ++; 
+        }
         // leave empty place for IGD
     }
 
