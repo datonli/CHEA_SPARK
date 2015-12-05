@@ -34,7 +34,7 @@ import org.apache.spark.api.java.function.PairFlatMapFunction;
 import scala.Tuple2;
 
 
-public class CheaSp {
+public class CheaSpPartition {
 
 	/**
 	 * @param args
@@ -46,10 +46,12 @@ public class CheaSp {
 			ClassNotFoundException, InterruptedException, WrongRemindException {
         int popSize = 406;
         int hyperplaneIntercept = 27;
+        //int hyperplaneIntercept = popSize - 1;
         int neighbourNum = 2;
         int iterations = 800;
-        int writeTime = 2;
-        int innerLoop = 10;
+        int partitionNum = 4;
+        int innerLoop = 50;
+		int writeTime = 1;
         int loopTime = iterations / (writeTime * innerLoop);
         AProblem problem = DTLZ1.getInstance();
         MOP mop = CHEAMOP.getInstance(popSize, problem , hyperplaneIntercept, neighbourNum);
@@ -80,27 +82,24 @@ public class CheaSp {
 			System.out.println("The " + i + "th time!");
 			//Thread.sleep(2500);
 			pStr.clear();
-
-			// Dec 1
+			
+			mopData.clear();
 			mopData.str2Mop(mopStr);
-			mopData.mop.initPartition(writeTime);
-			for(int j = 0; j < writeTime; j ++) {
-				//System.out.println("writeTime is " + j );
-					
-				//Dec 1
-				mopData.mop.setPartition(j);
+			mopData.mop.initPartition(partitionNum);
+			System.out.println(mopStr);
+			for(int j = 0; j < partitionNum; j ++) {
+				mopData.mop.setPartitionArr(j);
 				mopStr = mopData.mop2Str();
-
 				pStr.add(mopStr);
 			}
-			//System.out.println("mopStr is  : \n" + mopStr );
-			JavaRDD<String> p = cxt.parallelize(pStr,writeTime);
+			JavaRDD<String> p = cxt.parallelize(pStr,partitionNum);
 			System.out.println("after union");
 			JavaPairRDD<String,String> mopPair = p.mapPartitionsToPair(
 													new PairFlatMapFunction<Iterator<String>,String,String>() {
 															public Iterable<Tuple2<String,String>> call(Iterator<String> s) throws WrongRemindException{
 																int aPopSize = 406;
 																int aHyperplaneIntercept = 27;
+																//int aHyperplaneIntercept = aPopSize - 1;
 																int aNeighbourNum = 2;
 																AProblem aProblem = DTLZ1.getInstance();
 																MOP aMop = CHEAMOP.getInstance(aPopSize, aProblem, aHyperplaneIntercept,aNeighbourNum);
@@ -134,16 +133,19 @@ public class CheaSp {
 															}
 													}
 											);
+			/*
 			List<Tuple2<String, String>> output = mopPair.collect();
-			//if(i == loopTime-1 )
-			//for(Tuple2<?,?> t : output)
-			//		System.out.println(t._1() + "##############" + t._2());
+			if(i == loopTime-1 )
+			for(Tuple2<?,?> t : output) {
+					//System.out.println("before reduce: " + t._1() + "##############" + t._2());
+			}
+			*/
 
 			JavaPairRDD<String,String> mopPop = mopPair.reduceByKey(
 														new Function2<String,String,String>() {
 																public String call(String s1, String s2) throws WrongRemindException {
-																		System.out.println("enterrrrrrrrrrrrrrr reduce " );
-																		System.out.println("s1 = " + s1 + " ,\n s2 = " + s2);
+																		//System.out.println("enterrrrrrrrrrrrrrr reduce " );
+																		//System.out.println("s1 = " + s1 + " ,\n s2 = " + s2);
 																        AProblem problem = DTLZ1.getInstance();
 																        int objectiveDimesion = problem.objectiveDimesion;
 																		String[] s1split = s1.split(" ");
@@ -187,7 +189,7 @@ public class CheaSp {
     private MOP str2MopAtr(String str,int objectiveDimesion) throws WrongRemindException {
         MOP cmop = new CHEAMOP(objectiveDimesion);
         String[] ss = str.split("_");
-        if(11 != ss.length) throw new WrongRemindException("Wrong str2MopAtr");
+        if(12 != ss.length) throw new WrongRemindException("Wrong str2MopAtr");
         cmop.popSize = Integer.parseInt(ss[0]);
         cmop.hyperplaneIntercept = Integer.parseInt(ss[1]);
         cmop.neighbourNum = Integer.parseInt(ss[2]);
@@ -212,6 +214,7 @@ public class CheaSp {
 		MopData mmopData = null;
         cmop.subpIndexOnEdge = mmopData.IntArray2IntegerList(StringJoin.decodeIntArray("#",ss[9]));
         cmop.objectiveDimesion = Integer.parseInt(ss[10]);
+        cmop.partitionArr = StringJoin.decodeIntArray("#",ss[11]); 
         return cmop;
     }
 
@@ -224,6 +227,20 @@ public class CheaSp {
 		s1.ind.objIndex(idealPoint,hyperplaneIntercept);
 		s2.ind.calKVal(idealPoint,hyperplaneIntercept);
 		s2.ind.objIndex(idealPoint,hyperplaneIntercept);
+
+		/*
+		for(int i = 0 ; i < objectiveDimesion; i ++) {
+			refCal[i] = 1e+5;	
+		}
+        double c1 = MOP.getHyperVolume(s1.ind,refCal);
+        double c2 = MOP.getHyperVolume(s2.ind,refCal);
+        if(c1 > c2) {
+           s2.ind.copyTo(s1.ind);
+        }
+        for(int i = 0; i < idealPoint.length; i ++) s1.idealPoint[i] = idealPoint[i];
+        return s1;
+		*/
+	
 
 		if(s1.sectorialIndex == s1.ind.belongSubproblemIndex && s2.sectorialIndex == s2.ind.belongSubproblemIndex) {
 			if(s1.ind.kValue > s2.ind.kValue) {
@@ -272,6 +289,7 @@ public class CheaSp {
 		MopData mmopData = null;
         col.add(StringJoin.join("#",mmopData.IntegerList2IntArray(cmop.subpIndexOnEdge)));
         col.add(String.valueOf(cmop.objectiveDimesion));
+		col.add(StringJoin.join("#",cmop.partitionArr));
         return StringJoin.join("_",col);
     }
 
@@ -305,7 +323,7 @@ public class CheaSp {
 											);
 			System.out.println("after reduceByKey!");
 
-			output = mopPop.collect();
+			List<Tuple2<String, String>> output = mopPop.collect();
 			mopList.clear();
 			int tt = 0 ;
 			int e = 0 ;
@@ -320,7 +338,7 @@ public class CheaSp {
 				tt ++;
 			}
 			mopStr = StringJoin.join("!",mopList);
-			System.out.println("mopList[" + e + "] is : " + mopList.get(e));
+			//System.out.println("mopList[" + e + "] is : " + mopList.get(e));
 			//JavaRDD<String> mopValue = mopPop.values();
 			// Nov. 3  need to add a function let all recoreds merge to one population.
 			// and make it cycle
@@ -328,8 +346,8 @@ public class CheaSp {
 			System.out.println("After map");
 			//pop = p;
 			if(i == loopTime -1){
-					hdfsOper.mkdir("spark/");
-					hdfsOper.createFile("spark/spark_chea.txt", StringJoin.join("\n",mopList));
+				hdfsOper.mkdir("spark/");
+				hdfsOper.createFile("spark/spark_chea.txt", StringJoin.join("\n",mopList));
 			}
 		}
 

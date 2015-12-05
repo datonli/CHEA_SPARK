@@ -34,7 +34,7 @@ import org.apache.spark.api.java.function.PairFlatMapFunction;
 import scala.Tuple2;
 
 
-public class CheaSp {
+public class CheaSpPartition {
 
 	/**
 	 * @param args
@@ -44,13 +44,14 @@ public class CheaSp {
 	 */
 	public static void main(String[] args) throws IOException,
 			ClassNotFoundException, InterruptedException, WrongRemindException {
-        int popSize = 406;
+        int popSize = 100;
+		int hyperplaneIntercept = popSize - 1;
         //int hyperplaneIntercept = 27;
-        int hyperplaneIntercept = popSize - 1;
         int neighbourNum = 2;
         int iterations = 400;
         int writeTime = 1;
         int innerLoop = 1;
+		int partitionNum = 1;
         int loopTime = iterations / (writeTime * innerLoop);
         AProblem problem = DTLZ1.getInstance();
         MOP mop = CHEAMOP.getInstance(popSize, problem , hyperplaneIntercept, neighbourNum);
@@ -81,19 +82,32 @@ public class CheaSp {
 			System.out.println("The " + i + "th time!");
 			//Thread.sleep(2500);
 			pStr.clear();
-			
-			System.out.println(mopStr);
-			for(int j = 0; j < writeTime; j ++) {
+
+			// Dec 1
+			mopData.str2Mop(mopStr);
+			mopData.mop.initPartition(partitionNum);
+			System.out.println("begin");
+			for(int j = 0; j < partitionNum; j ++) {
+				//System.out.println("writeTime is " + j );
+				//Dec 1
+				mopData.mop.setPartitionArr(j);
+				mopStr = mopData.mop2Str();
+				//System.out.println("mopStr is  : \n" + mopStr );
 				pStr.add(mopStr);
 			}
-			JavaRDD<String> p = cxt.parallelize(pStr,writeTime);
-			System.out.println("after union");
+			//System.out.println("mopStr is  : \n" + mopStr );
+			//for(int j = 0; j < pStr.size() ; j ++) System.out.println("pStr's " + j + " : \n" + pStr.get(j));
+			JavaRDD<String> p = cxt.parallelize(pStr,partitionNum);
+			//System.out.println("p's after parallelize is : \n" + p.toString());
+			//p = p.repartition(1);
+			//System.out.println("p's after parallelize is : \n" + p.toString());
+			System.out.println("after parallel");
 			JavaPairRDD<String,String> mopPair = p.mapPartitionsToPair(
 													new PairFlatMapFunction<Iterator<String>,String,String>() {
-															public Iterable<Tuple2<String,String>> call(Iterator<String> s) throws WrongRemindException{
-																int aPopSize = 406;
-																//int aHyperplaneIntercept = 27;
+															public Iterable<Tuple2<String,String>> call(Iterator<String> s) throws WrongRemindException {
+																int aPopSize = 100;
 																int aHyperplaneIntercept = aPopSize - 1;
+																//int aHyperplaneIntercept = 27;
 																int aNeighbourNum = 2;
 																AProblem aProblem = DTLZ1.getInstance();
 																MOP aMop = CHEAMOP.getInstance(aPopSize, aProblem, aHyperplaneIntercept,aNeighbourNum);
@@ -104,15 +118,14 @@ public class CheaSp {
 																// wrong in this place , Nov 26
 																// it didn't work actully . I've found sops's size is zero
 																String str = s.next();
+																mmop.clear();
 																mmop.str2Mop(str);
+																//System.out.println("partitionArr is " + StringJoin.join(" ",mmop.mop.partitionArr));
 																//System.out.println("str is : " + str);
 																System.out.println("Mop end ! ");
 																//System.out.println(mmop.mop.sops.size());
-																//System.out.println(mmop.mop.idealPoint[0]);
+																//System.out.println("idealPoint is : " + StringJoin.join(" " , mmop.mop.idealPoint));
 
-																for(int i = 0 ; i < mmop.mop.sops.size(); i ++) {
-																	//System.out.println("the " + i  + "th 's belongSubproblemIndex is : " + mmop.mop.sops.get(i).ind.belongSubproblemIndex);
-																}
 																// the second time is error happend ! Nov 27
 																mmop.mop.updatePop(innerLoop);
 																System.out.println("update Pop!");
@@ -122,24 +135,24 @@ public class CheaSp {
 																		lt.add(new Tuple2<String,String>(String.valueOf(mmop.mop.sops.get(k).sectorialIndex),mmop.sop2Line(mmop.mop.sops.get(k))));
 																}
 																lt.add(new Tuple2<String,String>("111111111","111111111 " + mmop.mopAtr2Str()));
-																mmop.clear();
 																return lt;
 															}
 													}
 											);
-			/*
+			System.out.println("End Map part !!!");
 			List<Tuple2<String, String>> output = mopPair.collect();
 			if(i == loopTime-1 )
-			for(Tuple2<?,?> t : output) {
-					//System.out.println("before reduce: " + t._1() + "##############" + t._2());
-			}
-			*/
+				for(Tuple2<?,?> t : output) {
+				//	System.out.println(t._1() + "##############" + t._2());
+				}
+			System.out.println("next to Reduce part !!!");
 
+			/*
 			JavaPairRDD<String,String> mopPop = mopPair.reduceByKey(
 														new Function2<String,String,String>() {
 																public String call(String s1, String s2) throws WrongRemindException {
 																		//System.out.println("enterrrrrrrrrrrrrrr reduce " );
-																		//System.out.println("s1 = " + s1 + " ,\n s2 = " + s2);
+																		//System.out.println("s1 = " + s1 + " ,s2 = " + s2);
 																        AProblem problem = DTLZ1.getInstance();
 																        int objectiveDimesion = problem.objectiveDimesion;
 																		String[] s1split = s1.split(" ");
@@ -208,7 +221,7 @@ public class CheaSp {
 		MopData mmopData = null;
         cmop.subpIndexOnEdge = mmopData.IntArray2IntegerList(StringJoin.decodeIntArray("#",ss[9]));
         cmop.objectiveDimesion = Integer.parseInt(ss[10]);
-        cmop.partitionArr = StringJoin.decodeIntArray("#",ss[11]); 
+		cmop.partitionArr = StringJoin.decodeIntArray("#",ss[11]);
         return cmop;
     }
 
@@ -299,35 +312,38 @@ public class CheaSp {
         }
         return m1;
     }
-														}
+									}
 											);
+		*/
 			System.out.println("after reduceByKey!");
-
-			List<Tuple2<String, String>> output = mopPop.collect();
+			//output = mopPop.collect();
+			output = mopPair.collect();
 			mopList.clear();
 			int tt = 0 ;
 			int e = 0 ;
 			for(Tuple2<?,?> t : output) {
-				//if(i == loopTime -1 )
-				//	System.out.println(t._1() + "#############" + t._2());
+				if(i == loopTime -1 ) {
+		//			System.out.println(t._1() + "#############" + t._2());
+				}
 				if("111111111".equals(t._1())) {
 					e = tt;
-					//System.out.println("\n have 111111111\n , value is : " + t._2() + "\n tt is : " + tt);
+					System.out.println("have 111111111, value is : " + t._2() + " ,and index in order is : " + tt);
 				}
 				mopList.add(t._2().toString());
 				tt ++;
 			}
 			mopStr = StringJoin.join("!",mopList);
+		//	System.out.println("mopStr is : " + mopStr);
 			//System.out.println("mopList[" + e + "] is : " + mopList.get(e));
 			//JavaRDD<String> mopValue = mopPop.values();
 			// Nov. 3  need to add a function let all recoreds merge to one population.
 			// and make it cycle
 
-			System.out.println("After map");
+			System.out.println("After all");
 			//pop = p;
-			if(i == loopTime -1){
-				hdfsOper.mkdir("spark/");
-				hdfsOper.createFile("spark/spark_chea.txt", StringJoin.join("\n",mopList));
+			if(i == loopTime -1) {
+					hdfsOper.mkdir("spark/");
+					hdfsOper.createFile("spark/spark_chea.txt", StringJoin.join("\n",mopList));
 			}
 		}
 

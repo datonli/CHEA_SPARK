@@ -31,10 +31,11 @@ public class CheaSerial {
 	 */
 	public static void main(String[] args) throws IOException,
 			ClassNotFoundException, InterruptedException, WrongRemindException {
-        int popSize = 406;
-        int hyperplaneIntercept = 27;
+        int popSize = 100;
+        //int hyperplaneIntercept = 27;
+        int hyperplaneIntercept = popSize - 1;
         int neighbourNum = 2;
-        int iterations = 800;
+        int iterations = 400;
         int writeTime = 1;
         int innerLoop = 1;
         int loopTime = iterations / (writeTime * innerLoop);
@@ -52,7 +53,9 @@ public class CheaSerial {
 		for (int i = 0; i < loopTime; i ++) {
 			mopData.clear();
 			mopData.str2Mop(mopStr);
+			mopData.mop.initPartition(1);
 			mopData.mop.updatePop(1);
+			System.out.println("mop's referencePoint = " + StringJoin.join(" " ,mopData.mop.referencePoint) + ",idealPoint = " + StringJoin.join(" ",mopData.mop.idealPoint));
 			mopStr = mopData.mop2Str();
 		}
 	    String filename = "/home/laboratory/workspace/moead_parallel/experiments/chea_serial.txt";

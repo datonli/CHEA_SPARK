@@ -44,9 +44,10 @@ public class chea {
 
 
 		public static void main(String[] args) throws IOException{
-			int popSize = 406;
-			int hyperplaneIntercept = 27;
-			int iterations = 800;
+			int popSize = 100;
+			//int hyperplaneIntercept = 27;
+			int hyperplaneIntercept = popSize - 1;
+			int iterations = 400;
 			int neighbourNum = 2;		
 			AProblem problem = DTLZ1.getInstance();
 			MOP mop = CHEAMOP.getInstance(popSize,problem,hyperplaneIntercept,neighbourNum);

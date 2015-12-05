@@ -21,7 +21,7 @@ public class CHEAMOP extends MOP{
         this.problem = problem;   
 		this.perIntercept = (double)1.0/hyperplaneIntercept;
         allocateAll();
-    }
+    } 	
 	
 	public static MOP getInstance(int popSize,AProblem problem,int hyperplaneIntercept,int neighbourNum) {
 		if(null == instance)
@@ -35,26 +35,7 @@ public class CHEAMOP extends MOP{
 	}
 
     public List<int[]> indexRangePartition(double p,int partitionNum) {
-        List<int[]> partitions = new ArrayList<int[]>(partitionNum);
-		List<Integer> partList = new ArrayList<Integer>(popSize/partitionNum);
-        for(int i = 0; i < partitionNum; i ++) {
-			int cnt = i ;
-			partList.clear();
-			while(cnt < popSize) {
-				partList.add(new Integer(cnt));
-				cnt += partitionNum;
-			}
-            int[] arr = new int[partList.size()];
-			for(int j = 0 ; j < partList.size(); j ++) arr[j] = partList.get(j).intValue();
-			partitions.add(arr);
-        }
-        return partitions;
-    }
-
-	/*
-    public List<int[]> indexRangePartition(double p,int partitionNum) {
         int increase =(int)(p*popSize);
-		if( 1 == partitionNum ) increase = 0;
         int part = (int)(popSize/partitionNum);
         List<int[]> partitions = new ArrayList<int[]>(partitionNum);
         int index = 0 ;
@@ -71,26 +52,23 @@ public class CHEAMOP extends MOP{
         }
         return partitions;
     }
-	*/
 
 	// init all data struct need to initial Nov 18
 	public void initial() {
 		initPopulation();
 		initNeighbour(neighbourNum);
 
-		partitions = indexRangePartition(0.05,1);
-		partitionArr = partitions.get(0);
+		partitionArr = indexRangePartition(0.05,1).get(0);
+		
 		//after this part , next would be step 2 Nov 19
 	}
 
 	public void initPartition(int partitionNum) {
-		partitions.clear();
 		partitions = indexRangePartition(0.05,partitionNum);
 	}
 
 	public void setPartitionArr(int i) {
 		partitionArr = partitions.get(i);
-		//System.out.println("partition's " + i + " is : " + StringJoin.join(" ",partitionArr));
 	}
 
     // initial the neighbour point for neighbour's subProblems. Nov 11.
@@ -100,6 +78,38 @@ public class CHEAMOP extends MOP{
             sops.get(i).getVicinity(neighbourNum,hyperplaneIntercept);
         }
 	}
+
+	// generate subProblem, and add points to subpIndexOnEdge ... Nov 18
+/*	private int genSubProblems(int startObjIndex,int maxValueLeft,int[] coordinate,int indexCount) { 
+		if( 0 == startObjIndex ||  0 == maxValueLeft ) {
+			indexCount ++;
+			//System.out.println("indexCount : " + indexCount );
+			coordinate[startObjIndex] = maxValueLeft;
+			SOP subProblem = new SOP(CMoChromosome.createChromosome());
+			subProblem.vObj = coordinate;
+			subProblem.sectorialIndex = indexCount;
+			// initial subProblem's ind . belongSubproblemIndex 
+			// is useless Nov 19
+			// why wrong in belongSubproblemIndex  Nov 21
+			subProblem.ind.belongSubproblemIndex = -1;
+			subProblem.ind.hyperplaneIntercept = hyperplaneIntercept;
+			subProblem.ind.evaluate(problem);
+			sops.add(subProblem);
+			int count = 0 ;
+			for(int p = 0; p < objectiveDimesion; p ++) {
+				if( 0 == coordinate[p] ) {
+					subpIndexOnEdge.add(new Integer(indexCount));
+					break;
+				}
+			}
+			return indexCount;
+		}
+		for( int i = maxValueLeft; i >= 0; i --) {
+			coordinate[startObjIndex] = i;
+			indexCount = genSubProblems(startObjIndex - 1, maxValueLeft - i, coordinate, indexCount);
+		}
+		return indexCount;
+	} */
 
 	private int genSubProblems(int startObjIndex,int maxValueLeft,int indexCount) { 
 		if( 0 == startObjIndex ||  0 == maxValueLeft ) {
@@ -185,6 +195,12 @@ public class CHEAMOP extends MOP{
 			subpIndexOnEdge.add(new Integer(getIndexFromVObj(arr,hyperplaneIntercept)));
 			arr[i] = 0;
 		}
+
+		for(int i = 0; i < sops.size(); i ++) {
+			//System.out.println("sop's index is : " + sops.get(i).sectorialIndex + " , vobj is : " + StringJoin.join(" ",sops.get(i).vObj));
+		}
+
+		//System.out.println("indexCount is : " + indexCount );
 		sizeSubpOnEdge = subpIndexOnEdge.size();
 		// initial the all points
 		for(int i = 0; i < objectiveDimesion; i ++) {
@@ -195,6 +211,7 @@ public class CHEAMOP extends MOP{
 		}
 		for(int n = 1 ; n < popSize; n ++) {
 			updateExtremePoint(sops.get(n).ind);
+			//sops.get(n).ind.evaluate(problem);
 		}
 		updatePartition();
 	}
@@ -226,7 +243,7 @@ public class CHEAMOP extends MOP{
 				bIdealUpdated = false;
 			}
 		}
-		return bIdealUpdated;
+		return bAnchorUpdated;
 	}
 
 	// update sop 's idealPoint for reducer's update ind
@@ -239,11 +256,11 @@ public class CHEAMOP extends MOP{
 		}
 	}
 
+/*
     // tour select two points as parents for reproduction.  Nov 11
     public int tourSelectionHV(List<SOP> sops) {
         int p1 = (int)(PRNG.nextDouble(0,1) * partitionArr.length);
         int p2 = (int)(PRNG.nextDouble(0,1) * partitionArr.length);
-		//System.out.println("partition's len = " +partitionArr.length +  ",p1 = " + p1 + ",p2 = " + p2);
         double hv1 = tourSelectionHVDifference(partitionArr[p1],sops);
         double hv2 = tourSelectionHVDifference(partitionArr[p2],sops);
         if(hv1 >= hv2) return partitionArr[p1];
@@ -257,7 +274,7 @@ public class CHEAMOP extends MOP{
             double hvDifference = 0.0;
             
             // need to add a sub-problem class , CHEA must have a sub problem  Nov 13
-            SOP subProblem = sops.get(p);
+                     SOP subProblem = sops.get(p);
             int subProblemNeighbourSize  = subProblem.neighbour.size();
             double hv0 = getHyperVolume(sops.get(p).ind, referencePoint);
             for(int i = 0 ; i < subProblemNeighbourSize; i ++) {
@@ -272,6 +289,83 @@ public class CHEAMOP extends MOP{
             return hvDifference;
     }
 
+	*/
+
+    // tour select two points as parents for reproduction.  Nov 11
+    public int tourSelectionHV(List<SOP> sops) {
+        int p1 = (int)(PRNG.nextDouble(0,1) * popSize);
+        int p2 = (int)(PRNG.nextDouble(0,1) * popSize);
+        double hv1 = tourSelectionHVDifference(p1,sops);
+        double hv2 = tourSelectionHVDifference(p2,sops);
+        if(hv1 >= hv2) return p1;
+        else return p2;
+    }
+
+    public double tourSelectionHVDifference(int p,List<SOP> sops){
+            int num = 0 ;
+            int index ;
+            double hvSide = 0.0;
+            double hvDifference = 0.0;
+            
+            // need to add a sub-problem class , CHEA must have a sub problem  Nov 13
+            /*
+			while(sops.get(p).ind.belongSubproblemIndex != sops.get(p).sectorialIndex) {
+                p = sops.get(p).ind.belongSubproblemIndex;
+            }
+			*/
+            SOP subProblem = sops.get(p);
+            int subProblemNeighbourSize  = subProblem.neighbour.size();
+            double hv0 = getHyperVolume(sops.get(p).ind, referencePoint);
+            for(int i = 0 ; i < subProblemNeighbourSize; i ++) {
+                SOP sop = sops.get(subProblem.neighbour.get(i).intValue());
+                if( sop.sectorialIndex == sop.ind.belongSubproblemIndex) {
+                    hvSide = getHyperVolume(sop.ind, referencePoint);
+                    hvDifference += (hv0 - hvSide);
+                    num ++;
+                }
+            }
+            if(num != 0) hvDifference = hvDifference/num;
+            return hvDifference;
+    }
+/*
+	public double getHyperVolume(MoChromosome ind,double[] referencePointCalc) {
+        double volume = 1;
+        for(int j = 0 ; j < ind.objectiveDimesion; j ++) volume *= (referencePointCalc[j] - ind.objectiveValue[j]);
+        return volume;	
+	}
+*/
+
+	//public void excute(int run,List<double> igd) {}
+/*
+	public void updatePop(int iterations) {
+		//initial IGD calc Nov 19
+		IGD igdOper = new IGD(1500);
+		String filename = "/home/laboratory/workspace/TestData/PF_Real/DTLZ1(3).dat";
+		try {
+			ps = igdOper.loadPfront(filename);
+		} catch (IOException e) {
+		}
+
+		for(int gen = 1 ; gen <= iterations; gen ++) {
+			evolutionTourSelect2();
+			// calc igd , using ps and sops's objectiveValue 
+			// Nov 21
+			double[] genDisIGD = new double[2];
+			genDisIGD[0] = gen;
+			genDisIGD[1] = calcIGD();
+			igdOper.igd.add(genDisIGD);
+
+			// add IGD value into a datastruct Nov 19
+		}
+		filename = "/home/laboratory/workspace/moead_parallel/experiments/CHEA_IGD_DTLZ1_3.txt";
+		try {
+			igdOper.saveIGD(filename);	
+		} catch (IOException e) {
+		}
+	}
+
+*/
+
     // update Pop part is main to excute the evolustion. Nov 14
     @Override
     public void updatePop(int innerTime) {
@@ -279,7 +373,7 @@ public class CHEAMOP extends MOP{
 			evolutionTourSelect2();
 		}
 	}
-
+/*	
 
 	public void evolutionTourSelect2() {
         boolean isUpdate = false;
@@ -293,8 +387,7 @@ public class CHEAMOP extends MOP{
             // select two indivduals to reproduce a new offspring. Nov 11
             int parentIndex1 ;
             int parentIndex2 ;
-            int b = len % (popSize/7); 
-            //parentIndex1 = tourSelectionHV(sops);
+            int b = len % (partitionSize/7); 
             if(b < sizeSubpOnEdge) {
                 parentIndex1 =  subpIndexOnEdge.get(b).intValue();
 				//System.out.println("subpIndexOnEdge 's " + b + " = " + parentIndex1);
@@ -317,6 +410,44 @@ public class CHEAMOP extends MOP{
             len ++; 
         }
 	}
+*/
+
+	public void evolutionTourSelect2() {
+        boolean isUpdate = false;
+        int len = 0 ;
+		MoChromosome offSpring ;
+		//MoChromosome tmp;
+        // need to add a part about calculating the IGD every 25 gen or 10 gen Nov 11
+		//int partitionSize = partitionArr.length;
+        for(int i = 0 ;i < popSize; i ++){
+            // this is MOEAD part ; delete evolveNewInd(i);
+            // select two indivduals to reproduce a new offspring. Nov 11
+            int parentIndex1 ;
+            int parentIndex2 ;
+            int b = len % (popSize/7); 
+            if(b < sizeSubpOnEdge) {
+                parentIndex1 =  subpIndexOnEdge.get(b).intValue();
+				//System.out.println("subpIndexOnEdge 's " + b + " = " + parentIndex1);
+            } else {
+                parentIndex1 = tourSelectionHV(sops);
+            }
+            parentIndex2 = tourSelectionHV(sops);
+            offSpring = new CMoChromosome();
+			offSpring.hyperplaneIntercept = hyperplaneIntercept;
+            offSpring.crossover((MoChromosome)sops.get(parentIndex1).ind,(MoChromosome)sops.get(parentIndex2).ind);
+            offSpring.mutate(1d/offSpring.genesDimesion);
+            
+            offSpring.evaluate(problem);
+			if(updateExtremePoint(offSpring)) updatePartition();
+            //updatePoints(offSpring);
+            offSpring.objIndex(idealPoint,hyperplaneIntercept);
+			if(null != (offSpring = hyperVolumeCompareSectorialGrid(offSpring))) {
+				//updateFixWeight(sops.get(offSpring.belongSubproblemIndex),true);
+			}
+            len ++; 
+        }
+        // leave empty place for IGD
+    }
 
     // updatePoints including idealPoint points ,reference points and extrem points. Nov 11
     private void updatePoints(MoChromosome offSpring) {
@@ -339,6 +470,10 @@ public class CHEAMOP extends MOP{
 		for( int n = 0; n < popSize; n ++) {
 			sops.get(n).ind.objIndex(idealPoint,hyperplaneIntercept);
 		}
+		/*
+		for(int i = 0; i < sops.size(); i ++) {
+			if(sops.get(i).ind.belongSubproblemIndex > 406 || sops.get(i).ind.belongSubproblemIndex < 0) 					System.out.print(sops.get(i).ind.belongSubproblemIndex + ",");
+		}*/
 		boolean[] sopsFlag = new boolean[popSize];
 		List<MoChromosome> initRestIndPop = new ArrayList<MoChromosome>(popSize);
 		for(int n = 0 ; n < popSize; n ++) {
@@ -492,6 +627,22 @@ public class CHEAMOP extends MOP{
 		}
 		return rInd;
 	}
+
+	/*
+    private double calcIGD() {
+        double distanceIGD = 0.0;
+        for (int i  = 0 ; i < ps.size(); i ++) {
+            double minDistance = 1.0e+10;
+            for (int j = 0 ; j < popSize; j ++) {
+            	double d = calcDistance(ps.get(i),sops.get(j).ind.objectiveValue);
+            	if(d < minDistance) minDistance = d;
+            }
+            distanceIGD += minDistance;
+        }
+        distanceIGD /= popSize;
+        return distanceIGD;
+    }
+*/
 
 	 public void writeAll2File(String fileName) throws IOException{
         File file = new File(fileName);
