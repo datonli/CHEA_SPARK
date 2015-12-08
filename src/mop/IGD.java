@@ -50,6 +50,21 @@ public class IGD {
 		return Math.sqrt(sum);
 	}
 	
+	public double calcIGD(List<double[]> real) {
+		double distanceIGD = 0.0;
+		for(int i = 0 ; i < real.size(); i ++) {
+			double minDistance = 1.0e+10;
+			for(int j = 0; j < ps.size(); j ++) {
+				double d = calcDistance(real.get(i),ps.get(j));
+				if(d < minDistance) minDistance = d;
+			}
+			distanceIGD += minDistance;
+		}
+		distanceIGD /= real.size();
+		return distanceIGD;
+	}
+
+	/*
     public double calcIGD(List<SOP> sops) {
         double distanceIGD = 0.0;
         for (int i  = 0 ; i < ps.size(); i ++) {
@@ -63,6 +78,7 @@ public class IGD {
         distanceIGD /= sops.size();
         return distanceIGD;
     }
+	*/
 
 
 	public List<double[]> loadPfront(String filename) throws IOException {

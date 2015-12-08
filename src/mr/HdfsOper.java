@@ -45,7 +45,11 @@ public class HdfsOper {
 	// load the configure files
 	public static Configuration config() {
 		Configuration conf = new JobConf(HdfsOper.class);
-//		conf.addResource(new Path("/home/laboratory/hadoop-1.2.1/conf/core-site.xml"));
+		conf.addResource(new Path("/home/laboratory/hadoop-2.7.1/etc/hadoop/core-site.xml"));
+		conf.addResource(new Path("/home/laboratory/hadoop-2.7.1/etc/hadoop/hdfs-site.xml"));
+		conf.addResource(new Path("/home/laboratory/hadoop-2.7.1/etc/hadoop/mapred-site.xml"));
+		conf.addResource(new Path("/home/laboratory/hadoop-2.7.1/etc/hadoop/yarn-site.xml"));
+		//conf.addResource(new Path("/home/laboratory/hadoop-1.2.1/conf/core-site.xml"));
 //		conf.addResource(new Path("/home/laboratory/hadoop-1.2.1/conf/hdfs-site.xml"));
 //		conf.addResource(new Path("/home/laboratory/hadoop-1.2.1/conf/mapred-site.xml"));
 //		conf.addResource("classpath:/hadoop/core-site.xml");

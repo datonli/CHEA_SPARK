@@ -33,7 +33,7 @@ public class MapClass extends MapReduceBase implements Mapper<Object, Text, Text
 	public void map(Object key, Text value, OutputCollector<Text, Text> output, Reporter reporter) 
 			throws IOException{
 		String paragraph = value.toString();
-		System.out.println("paragraph is \n" + paragraph);
+		//System.out.println("paragraph is \n" + paragraph);
 		int popSize = 406;
 		AProblem problem = DTLZ1.getInstance();
 		int objectiveDimesion = problem.objectiveDimesion;
@@ -50,6 +50,7 @@ public class MapClass extends MapReduceBase implements Mapper<Object, Text, Text
 			
 			//running moead algorithm
 			//chea.chea(mopData.mop,innerLoop);
+			System.out.println("innerLoop is : " + innerLoop);
 			mopData.mop.updatePop(innerLoop);
 
 			// especially update idealPoint for reducer's update.
@@ -65,10 +66,10 @@ public class MapClass extends MapReduceBase implements Mapper<Object, Text, Text
 			// value : str
 			for (int i = 0; i < mopData.mop.sops.size(); i++) {
 				keyIndex.set(String.valueOf(mopData.mop.sops.get(i).sectorialIndex));
-				//System.out.println("key : " + mopData.weight2Line(i) + " , value : " + mopData.mop2Line(i));
 				valueInd.set(mopData.sop2Line(mopData.mop.sops.get(i)));
 				output.collect(keyIndex, valueInd);
 			}
+			mopData.clear();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

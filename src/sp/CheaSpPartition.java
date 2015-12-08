@@ -11,6 +11,7 @@ import mop.MOP;
 import mop.SOP;
 import mop.CHEAMOP;
 import mop.MopData;
+import mop.IGD;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.*;
@@ -18,8 +19,7 @@ import org.apache.hadoop.mapred.*;
 import org.apache.hadoop.mapred.lib.NLineInputFormat;
 
 import problems.AProblem;
-import problems.DTLZ2;
-import problems.DTLZ1;
+import problems.DTLZ4;
 import utilities.StringJoin;
 import utilities.WrongRemindException;
 
@@ -49,11 +49,11 @@ public class CheaSpPartition {
         //int hyperplaneIntercept = popSize - 1;
         int neighbourNum = 2;
         int iterations = 800;
-        int partitionNum = 4;
-        int innerLoop = 50;
+        int partitionNum = 2;
+        int innerLoop = 10;
 		int writeTime = 1;
         int loopTime = iterations / (writeTime * innerLoop);
-        AProblem problem = DTLZ1.getInstance();
+        AProblem problem = DTLZ4.getInstance();
         MOP mop = CHEAMOP.getInstance(popSize, problem , hyperplaneIntercept, neighbourNum);
         mop.initial();
 		// comment original code for running serial.
@@ -77,6 +77,14 @@ public class CheaSpPartition {
 		long startTime = System.currentTimeMillis();
 		List<String> pStr = new ArrayList<String>();
 		List<String> mopList = new ArrayList<String>();
+
+        IGD igdOper = new IGD(1500);
+        String filename = "/home/laboratory/workspace/TestData/PF_Real/DTLZ4(3).dat";
+        try {
+            igdOper.ps = igdOper.loadPfront(filename);
+        } catch (IOException e) {}
+
+
 		System.out.println("Timer start!!!");
 		for (int i = 0; i < loopTime; i++) {
 			System.out.println("The " + i + "th time!");
@@ -85,6 +93,16 @@ public class CheaSpPartition {
 			
 			mopData.clear();
 			mopData.str2Mop(mopStr);
+
+            List<double[]> real = new ArrayList<double[]>(mop.sops.size()); 
+            for(int j = 0; j < mop.sops.size(); j ++) {
+               real.add(mop.sops.get(j).ind.objectiveValue);
+            }
+            double[] genDisIGD = new double[2];
+            genDisIGD[0] = i*innerLoop;
+            genDisIGD[1] = igdOper.calcIGD(real);
+            igdOper.igd.add(genDisIGD);
+
 			mopData.mop.initPartition(partitionNum);
 			System.out.println(mopStr);
 			for(int j = 0; j < partitionNum; j ++) {
@@ -101,7 +119,7 @@ public class CheaSpPartition {
 																int aHyperplaneIntercept = 27;
 																//int aHyperplaneIntercept = aPopSize - 1;
 																int aNeighbourNum = 2;
-																AProblem aProblem = DTLZ1.getInstance();
+																AProblem aProblem = DTLZ4.getInstance();
 																MOP aMop = CHEAMOP.getInstance(aPopSize, aProblem, aHyperplaneIntercept,aNeighbourNum);
 																aMop.allocateAll(aPopSize,aProblem.objectiveDimesion);
 																MopData mmop = new MopData(aMop,aProblem);
@@ -146,7 +164,7 @@ public class CheaSpPartition {
 																public String call(String s1, String s2) throws WrongRemindException {
 																		//System.out.println("enterrrrrrrrrrrrrrr reduce " );
 																		//System.out.println("s1 = " + s1 + " ,\n s2 = " + s2);
-																        AProblem problem = DTLZ1.getInstance();
+																        AProblem problem = DTLZ4.getInstance();
 																        int objectiveDimesion = problem.objectiveDimesion;
 																		String[] s1split = s1.split(" ");
 																		String[] s2split = s2.split(" ");
@@ -357,7 +375,7 @@ public class CheaSpPartition {
 
 		System.out.println("last idealPoint is : " + StringJoin.join(" ",mopData.mop.idealPoint));
 
-		String filename = "/home/laboratory/workspace/moead_parallel/experiments/parallel/spark_chea.txt";
+		filename = "/home/laboratory/workspace/moead_parallel/experiments/DTLZ4/spark_chea_partition.txt";
 		mopData.mop.write2File(filename);
 
 		System.out.println("Out of loop");
@@ -369,6 +387,13 @@ public class CheaSpPartition {
 		    col.add(StringJoin.join(" ",mopData.mop.sops.get(j).ind.objectiveValue));
 		}
     	content = StringJoin.join("\n", col);
-    	mopData.write2File("/home/laboratory/workspace/moead_parallel/experiments/parallel/spark_chea2.txt",content);
+    	mopData.write2File("/home/laboratory/workspace/moead_parallel/experiments/DTLZ4/spark_chea2_partition.txt",content);
+
+
+        filename = "/home/laboratory/workspace/moead_parallel/experiments/DTLZ4/CHEA_SP_PARTITION_IGD_DTLZ4_3.txt";
+        try {
+            igdOper.saveIGD(filename);
+        } catch (IOException e) {}
+
 	}
 }

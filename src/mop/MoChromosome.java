@@ -15,7 +15,6 @@ public abstract class MoChromosome {
 	public double[] objectiveValue;
 	public static int[][] range;
 
-
 	public double kValue ;
 	public int hyperplaneIntercept;
 	public int belongSubproblemIndex;
