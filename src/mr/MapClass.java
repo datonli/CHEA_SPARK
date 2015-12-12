@@ -34,10 +34,10 @@ public class MapClass extends MapReduceBase implements Mapper<Object, Text, Text
 			throws IOException{
 		String paragraph = value.toString();
 		//System.out.println("paragraph is \n" + paragraph);
-		int popSize = 406;
+		int popSize = 105;
 		AProblem problem = DTLZ1.getInstance();
 		int objectiveDimesion = problem.objectiveDimesion;
-		int hyperplaneIntercept = 27;
+		int hyperplaneIntercept = 13;
 		int neighbourNum = 2;
 		MOP mop = CHEAMOP.getInstance(popSize, problem , hyperplaneIntercept, neighbourNum);
 		mop.allocateAll(popSize,objectiveDimesion);

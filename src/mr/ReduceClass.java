@@ -26,7 +26,6 @@ public class ReduceClass extends MapReduceBase implements Reducer<Text, Text, Nu
 			throws IOException {
 		AProblem problem = DTLZ1.getInstance();
 		objectiveDimesion = problem.objectiveDimesion;
-		//MOP mop = new CHEAMOP(problem.objectiveDimesion);
 		MOP mop = null;
 		String value = null;
 		String tmp = null;
@@ -37,10 +36,7 @@ public class ReduceClass extends MapReduceBase implements Reducer<Text, Text, Nu
 		int cnt = 0 ;
 		while(values.hasNext()) {
 			tmp = values.next().toString();
-			//System.out.println(tmp);
 			if (!"111111111".equals(key.toString())) {
-				// update the mop's subProblem Nov 23
-				//System.out.println("tmp is : " + tmp);
 				try {
 					SOP tmpSop = MopData.str2Sop(tmp); 
 				
@@ -50,9 +46,6 @@ public class ReduceClass extends MapReduceBase implements Reducer<Text, Text, Nu
 					sops.add(tmpSop);
 				} catch (WrongRemindException e) {}
 			} else {
-				// update the mop's atr Nov 23
-				System.out.println("enter 111111111111, cnt is : " + cnt);
-				System.out.println("tmp is : " + tmp);
 				if(0 == cnt) {
 					try {
 						mop = str2MopAtr(tmp,objectiveDimesion);
@@ -69,6 +62,7 @@ public class ReduceClass extends MapReduceBase implements Reducer<Text, Text, Nu
 		}
 		if(flag) {
 			value ="111111111 " + mopAtr2Str(mop);
+			flag = false;
 		} else {
 			SOP subProblem = sops.get(0);
 			for(int i = 1; i < sops.size(); i ++) {
@@ -85,7 +79,7 @@ public class ReduceClass extends MapReduceBase implements Reducer<Text, Text, Nu
    private MOP str2MopAtr(String str,int objectiveDimesion) throws WrongRemindException {
         MOP cmop = new CHEAMOP(objectiveDimesion);
         String[] ss = str.split("_");
-        if(11 != ss.length) throw new WrongRemindException("Wrong str2MopAtr");
+        if(12 != ss.length) throw new WrongRemindException("Wrong str2MopAtr");
         cmop.popSize = Integer.parseInt(ss[0]);
         cmop.hyperplaneIntercept = Integer.parseInt(ss[1]);
         cmop.neighbourNum = Integer.parseInt(ss[2]);
@@ -110,6 +104,7 @@ public class ReduceClass extends MapReduceBase implements Reducer<Text, Text, Nu
         MopData mmopData = null;
         cmop.subpIndexOnEdge = mmopData.IntArray2IntegerList(StringJoin.decodeIntArray("#",ss[9]));
         cmop.objectiveDimesion = Integer.parseInt(ss[10]);
+		cmop.partitionArr = StringJoin.decodeIntArray("#",ss[11]);
         return cmop;
     }
 
@@ -170,6 +165,7 @@ public class ReduceClass extends MapReduceBase implements Reducer<Text, Text, Nu
         MopData mmopData = null;
         col.add(StringJoin.join("#",mmopData.IntegerList2IntArray(cmop.subpIndexOnEdge)));
         col.add(String.valueOf(cmop.objectiveDimesion));
+		col.add(StringJoin.join("#",cmop.partitionArr));
         return StringJoin.join("_",col);
     }
 

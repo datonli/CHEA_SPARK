@@ -22,7 +22,7 @@ import problems.DTLZ1;
 import utilities.StringJoin;
 import utilities.WrongRemindException;
 
-public class CheaMr{
+public class CheaMrPartition {
 
 	/**
 	 * @param args
@@ -37,8 +37,9 @@ public class CheaMr{
 		int hyperplaneIntercept = 13;
 		int neighbourNum = 2;
 		int iterations = 400;
-		int writeTime = 2;
-		int innerLoop = 5;
+		int writeTime = 1;
+		int partitionNum = 2;
+		int innerLoop = 20;
 		int loopTime = iterations / (writeTime * innerLoop);
 		AProblem problem = DTLZ1.getInstance();
 		MOP mop = CHEAMOP.getInstance(popSize, problem , hyperplaneIntercept, neighbourNum);
@@ -47,13 +48,23 @@ public class CheaMr{
 		MopData mopData = new MopData(mop,problem);
 
 		String mopStr = mopData.mop2Str();
-
+		List<String> pStr = new ArrayList<String>(partitionNum);
 		HdfsOper hdfsOper = new HdfsOper();
 		hdfsOper.mkdir("chea/");
 		for(int i = 0; i < iterations + 1; i ++)
 			hdfsOper.rm("chea/" + i + "/");
 		hdfsOper.mkdir("chea/0/");
-		hdfsOper.createFile("chea/chea.txt", mopStr, writeTime);
+
+
+        pStr.clear();
+        mopData.mop.initPartition(partitionNum);
+        for(int j = 0; j < partitionNum; j ++) {
+            mopData.mop.setPartitionArr(j);
+            mopStr = mopData.mop2Str();
+            pStr.add(mopStr);
+        }
+
+		hdfsOper.addContentFile("chea/chea.txt",StringJoin.join("\n",pStr));
 		hdfsOper.cp("chea/chea.txt","chea/0/part-00000");
 
         IGD igdOper = new IGD(1500);
@@ -114,18 +125,23 @@ public class CheaMr{
 			mopData.setDelimiter("\n");
 			mopData.str2Mop(hdfsOper.readWholeFile("chea/"+(i+1)+"/part-00000"));		
 			mopData.setDelimiter("!");
-			mopData.mop.initPartition(1);
-			mopStr = mopData.mop2Str();
+            pStr.clear();
+            mopData.mop.initPartition(partitionNum);
+            for(int j = 0; j < partitionNum; j ++) {
+                mopData.mop.setPartitionArr(j);
+                mopStr = mopData.mop2Str();
+                pStr.add(mopStr);                                                                                                                                                                                  
+            }
 			hdfsOper.rm("chea/chea.txt");
-			hdfsOper.createFile("chea/chea.txt", mopStr, writeTime);
+            hdfsOper.addContentFile("chea/chea.txt",StringJoin.join("\n",pStr));
 		}
 
 
         long recordTime = System.currentTimeMillis()-startTime - igdTime;
         System.out.println("Running time is : " + recordTime);
-        mopData.recordTimeFile("/home/laboratory/workspace/moead_parallel/experiments/recordTime.txt","\nDTLZ1,CheaMr ,writeTime_2,recordTime is " + recordTime);
+        mopData.recordTimeFile("/home/laboratory/workspace/moead_parallel/experiments/recordTime.txt","\nDTLZ1,CheaMrPartition ,partitionNum_2,recordTime is " + recordTime);
 
-		mopData.mop.write2File("/home/laboratory/workspace/moead_parallel/experiments/DTLZ1/writeTime_2_mr_chea.txt");
+		mopData.mop.write2File("/home/laboratory/workspace/moead_parallel/experiments/DTLZ1/partitionNum_2_mr_part_chea.txt");
 
 		BufferedReader br = new BufferedReader(hdfsOper.open("chea/"+(loopTime-1)+"/part-00000"));
 		String line = null;
@@ -135,9 +151,9 @@ public class CheaMr{
 			col.add(StringJoin.join(" ",mopData.mop.sops.get(j).ind.objectiveValue));
 		}
 		content = StringJoin.join("\n", col);
-		mopData.write2File("/home/laboratory/workspace/moead_parallel/experiments/DTLZ1/writeTime_2_mr_chea_all.txt",content);
+		mopData.write2File("/home/laboratory/workspace/moead_parallel/experiments/DTLZ1/partitionNum_2_mr_part_chea_all.txt",content);
 
-        filename = "/home/laboratory/workspace/moead_parallel/experiments/DTLZ1/writeTime_2_CHEA_MR_IGD_DTLZ1_3.txt";
+        filename = "/home/laboratory/workspace/moead_parallel/experiments/DTLZ1/partitionNum_2_CHEA_MR_PART_IGD_DTLZ1_3.txt";
         try {
             igdOper.saveIGD(filename);
         } catch (IOException e) {}

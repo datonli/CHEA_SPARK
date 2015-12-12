@@ -19,7 +19,7 @@ import org.apache.hadoop.mapred.*;
 import org.apache.hadoop.mapred.lib.NLineInputFormat;
 
 import problems.AProblem;
-import problems.DTLZ4;
+import problems.DTLZ1;
 import utilities.StringJoin;
 import utilities.WrongRemindException;
 
@@ -45,55 +45,48 @@ public class CheaSpPartition {
 	public static void main(String[] args) throws IOException,
 			ClassNotFoundException, InterruptedException, WrongRemindException {
         int popSize = 406;
-        int hyperplaneIntercept = 27;
-        //int hyperplaneIntercept = popSize - 1;
+        //int hyperplaneIntercept = 27;
+        int hyperplaneIntercept = popSize - 1;
         int neighbourNum = 2;
         int iterations = 800;
         int partitionNum = 2;
         int innerLoop = 10;
 		int writeTime = 1;
         int loopTime = iterations / (writeTime * innerLoop);
-        AProblem problem = DTLZ4.getInstance();
+        AProblem problem = DTLZ1.getInstance();
         MOP mop = CHEAMOP.getInstance(popSize, problem , hyperplaneIntercept, neighbourNum);
         mop.initial();
-		// comment original code for running serial.
-		// MOEAD.moead(mop,iterations);
-		
-		
-		// Oct 30  writing another mopData to use as multi pop in one file.
-		//MopData mopData = new MopData(mop);
-		
-		
 		HdfsOper hdfsOper = new HdfsOper();
 		hdfsOper.rm("spark/");
 
 		MopData mopData = new MopData(mop,problem);
 		String mopStr = mopData.mop2Str();
-		//System.out.println("mopStr is : \n" + mopStr);
 
 		SparkConf sparkConf = new SparkConf().setAppName("chea spark");
 		JavaSparkContext cxt = new JavaSparkContext(sparkConf);
 
-		long startTime = System.currentTimeMillis();
 		List<String> pStr = new ArrayList<String>();
 		List<String> mopList = new ArrayList<String>();
 
         IGD igdOper = new IGD(1500);
-        String filename = "/home/laboratory/workspace/TestData/PF_Real/DTLZ4(3).dat";
+        //String filename = "/home/laboratory/workspace/TestData/PF_Real/DTLZ1(3).dat";
+        String filename = "/home/laboratory/workspace/TestData/PF_Real/DTLZ1(2).dat";
         try {
             igdOper.ps = igdOper.loadPfront(filename);
         } catch (IOException e) {}
 
 
+		long startTime = System.currentTimeMillis();
+		long igdTime = 0;
 		System.out.println("Timer start!!!");
 		for (int i = 0; i < loopTime; i++) {
 			System.out.println("The " + i + "th time!");
 			//Thread.sleep(2500);
 			pStr.clear();
-			
+			long igdStartTime = System.currentTimeMillis();
 			mopData.clear();
+			mopData.setDelimiter("!");
 			mopData.str2Mop(mopStr);
-
             List<double[]> real = new ArrayList<double[]>(mop.sops.size()); 
             for(int j = 0; j < mop.sops.size(); j ++) {
                real.add(mop.sops.get(j).ind.objectiveValue);
@@ -102,9 +95,9 @@ public class CheaSpPartition {
             genDisIGD[0] = i*innerLoop;
             genDisIGD[1] = igdOper.calcIGD(real);
             igdOper.igd.add(genDisIGD);
+			igdTime += System.currentTimeMillis() - igdStartTime ;
 
 			mopData.mop.initPartition(partitionNum);
-			System.out.println(mopStr);
 			for(int j = 0; j < partitionNum; j ++) {
 				mopData.mop.setPartitionArr(j);
 				mopStr = mopData.mop2Str();
@@ -116,30 +109,16 @@ public class CheaSpPartition {
 													new PairFlatMapFunction<Iterator<String>,String,String>() {
 															public Iterable<Tuple2<String,String>> call(Iterator<String> s) throws WrongRemindException{
 																int aPopSize = 406;
-																int aHyperplaneIntercept = 27;
-																//int aHyperplaneIntercept = aPopSize - 1;
+																//int aHyperplaneIntercept = 27;
+																int aHyperplaneIntercept = aPopSize - 1;
 																int aNeighbourNum = 2;
-																AProblem aProblem = DTLZ4.getInstance();
+																AProblem aProblem = DTLZ1.getInstance();
 																MOP aMop = CHEAMOP.getInstance(aPopSize, aProblem, aHyperplaneIntercept,aNeighbourNum);
 																aMop.allocateAll(aPopSize,aProblem.objectiveDimesion);
 																MopData mmop = new MopData(aMop,aProblem);
-																System.out.println("Map begin : ");
-
-																// wrong in this place , Nov 26
-																// it didn't work actully . I've found sops's size is zero
 																String str = s.next();
 																mmop.str2Mop(str);
-																//System.out.println("str is : " + str);
-																System.out.println("Mop end ! ");
-																//System.out.println(mmop.mop.sops.size());
-																//System.out.println(mmop.mop.idealPoint[0]);
-
-																for(int i = 0 ; i < mmop.mop.sops.size(); i ++) {
-																	//System.out.println("the " + i  + "th 's belongSubproblemIndex is : " + mmop.mop.sops.get(i).ind.belongSubproblemIndex);
-																}
-																// the second time is error happend ! Nov 27
 																mmop.mop.updatePop(innerLoop);
-																System.out.println("update Pop!");
 																mmop.mop.updateSopIdealPoint(); 
 																List<Tuple2<String,String>> lt = new ArrayList<Tuple2<String,String>>();
 																for (int k = 0; k < mmop.mop.sops.size(); k ++) {
@@ -151,32 +130,20 @@ public class CheaSpPartition {
 															}
 													}
 											);
-			/*
-			List<Tuple2<String, String>> output = mopPair.collect();
-			if(i == loopTime-1 )
-			for(Tuple2<?,?> t : output) {
-					//System.out.println("before reduce: " + t._1() + "##############" + t._2());
-			}
-			*/
 
 			JavaPairRDD<String,String> mopPop = mopPair.reduceByKey(
 														new Function2<String,String,String>() {
 																public String call(String s1, String s2) throws WrongRemindException {
-																		//System.out.println("enterrrrrrrrrrrrrrr reduce " );
-																		//System.out.println("s1 = " + s1 + " ,\n s2 = " + s2);
-																        AProblem problem = DTLZ4.getInstance();
+																        AProblem problem = DTLZ1.getInstance();
 																        int objectiveDimesion = problem.objectiveDimesion;
 																		String[] s1split = s1.split(" ");
 																		String[] s2split = s2.split(" ");
-																		//System.out.println("s1 is : " + s1);
 																		MopData mmopData = null;
 																					
 																		if("111111111".equals(s1split[0])) {
-																			System.out.println("enter 111111111");
 																			MOP mop1 = null;
 																			MOP mop2 = null;
 														                    try {
-																				//System.out.println(s1split[1]);
 														                        mop1 = str2MopAtr(s1split[1],objectiveDimesion);
 														                        mop2 = str2MopAtr(s2split[1],objectiveDimesion);
 														                        mop1 = compareAtr(mop1,mop2,objectiveDimesion);
@@ -187,10 +154,7 @@ public class CheaSpPartition {
 																			SOP sop2 = null;
 																			double[] idealPoint = new double[objectiveDimesion];
 																			try {
-																				//System.out.println("s1's is : " + s1);
 																				sop1 = mmopData.str2Sop(s1);
-																				//System.out.println("sop1's hyperplaneIntercept is : " + sop1.ind.hyperplaneIntercept);
-																				//System.out.println("\n\n\nsop1 ind 's belong index is : " + sop1.ind.belongSubproblemIndex);
 																				sop2 = mmopData.str2Sop(s2);
 																				for(int i = 0 ; i < objectiveDimesion; i ++) idealPoint[i] = 1e+5;      
 																				for(int i = 0 ; i < objectiveDimesion; i ++) {
@@ -245,21 +209,6 @@ public class CheaSpPartition {
 		s1.ind.objIndex(idealPoint,hyperplaneIntercept);
 		s2.ind.calKVal(idealPoint,hyperplaneIntercept);
 		s2.ind.objIndex(idealPoint,hyperplaneIntercept);
-
-		/*
-		for(int i = 0 ; i < objectiveDimesion; i ++) {
-			refCal[i] = 1e+5;	
-		}
-        double c1 = MOP.getHyperVolume(s1.ind,refCal);
-        double c2 = MOP.getHyperVolume(s2.ind,refCal);
-        if(c1 > c2) {
-           s2.ind.copyTo(s1.ind);
-        }
-        for(int i = 0; i < idealPoint.length; i ++) s1.idealPoint[i] = idealPoint[i];
-        return s1;
-		*/
-	
-
 		if(s1.sectorialIndex == s1.ind.belongSubproblemIndex && s2.sectorialIndex == s2.ind.belongSubproblemIndex) {
 			if(s1.ind.kValue > s2.ind.kValue) {
         		for(int i = 0 ; i < objectiveDimesion; i ++) {
@@ -343,54 +292,49 @@ public class CheaSpPartition {
 
 			List<Tuple2<String, String>> output = mopPop.collect();
 			mopList.clear();
-			int tt = 0 ;
-			int e = 0 ;
 			for(Tuple2<?,?> t : output) {
-				//if(i == loopTime -1 )
-				//	System.out.println(t._1() + "#############" + t._2());
-				if("111111111".equals(t._1())) {
-					e = tt;
-					//System.out.println("\n have 111111111\n , value is : " + t._2() + "\n tt is : " + tt);
-				}
 				mopList.add(t._2().toString());
-				tt ++;
 			}
 			mopStr = StringJoin.join("!",mopList);
-			//System.out.println("mopList[" + e + "] is : " + mopList.get(e));
-			//JavaRDD<String> mopValue = mopPop.values();
-			// Nov. 3  need to add a function let all recoreds merge to one population.
-			// and make it cycle
-
 			System.out.println("After map");
-			//pop = p;
 			if(i == loopTime -1){
 				hdfsOper.mkdir("spark/");
 				hdfsOper.createFile("spark/spark_chea.txt", StringJoin.join("\n",mopList));
 			}
 		}
 
+		System.out.println("Out of loop");
+		cxt.stop();
+		long recordTime = System.currentTimeMillis()-startTime - igdTime;
+		System.out.println("Running time is : " + recordTime);
+		mopData.recordTimeFile("/home/laboratory/workspace/moead_parallel/experiments/recordTime.txt","\nDTLZ1,CheaSpParition ,partitionNum_2,recordTime is " + recordTime);
 
 		mopData.clear();
 		mopData.str2Mop(mopStr);
 
 		System.out.println("last idealPoint is : " + StringJoin.join(" ",mopData.mop.idealPoint));
 
-		filename = "/home/laboratory/workspace/moead_parallel/experiments/DTLZ4/spark_chea_partition.txt";
+		filename = "/home/laboratory/workspace/moead_parallel/experiments/DTLZ1/partitionNum_2_spark_chea_partition.txt";
 		mopData.mop.write2File(filename);
 
-		System.out.println("Out of loop");
-		cxt.stop();
-		System.out.println("Running time is : " + (System.currentTimeMillis() - startTime));
     	String content = null;
     	List<String> col = new ArrayList<String>();
         for(int j = 0 ; j < mopData.mop.sops.size(); j ++) {
 		    col.add(StringJoin.join(" ",mopData.mop.sops.get(j).ind.objectiveValue));
 		}
     	content = StringJoin.join("\n", col);
-    	mopData.write2File("/home/laboratory/workspace/moead_parallel/experiments/DTLZ4/spark_chea2_partition.txt",content);
+    	mopData.write2File("/home/laboratory/workspace/moead_parallel/experiments/DTLZ1/partitionNum_2_spark_chea_all_partition.txt",content);
 
+            List<double[]> real = new ArrayList<double[]>(mop.sops.size()); 
+            for(int j = 0; j < mop.sops.size(); j ++) {
+               real.add(mop.sops.get(j).ind.objectiveValue);
+            }
+            double[] genDisIGD = new double[2];
+            genDisIGD[0] = iterations;
+            genDisIGD[1] = igdOper.calcIGD(real);
+            igdOper.igd.add(genDisIGD);
 
-        filename = "/home/laboratory/workspace/moead_parallel/experiments/DTLZ4/CHEA_SP_PARTITION_IGD_DTLZ4_3.txt";
+        filename = "/home/laboratory/workspace/moead_parallel/experiments/DTLZ1/partitionNum_2_CHEA_SP_PARTITION_IGD_DTLZ1_3.txt";
         try {
             igdOper.saveIGD(filename);
         } catch (IOException e) {}

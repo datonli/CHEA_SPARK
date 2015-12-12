@@ -310,7 +310,6 @@ public class CHEAMOP extends MOP{
             
             offSpring.evaluate(problem);
 			if(updateExtremePoint(offSpring)) updatePartition();
-            //updatePoints(offSpring);
             offSpring.objIndex(idealPoint,hyperplaneIntercept);
 			if(null != (offSpring = hyperVolumeCompareSectorialGrid(offSpring))) {
 				//updateFixWeight(sops.get(offSpring.belongSubproblemIndex),true);
@@ -420,6 +419,24 @@ public class CHEAMOP extends MOP{
 		}
 		return popFront;
 	}
+
+	/*
+	public List<double[]> population2front(List<MoChromosome> popList) {
+		List<double[]> popFront = new ArrayList<double[]>(popList.size());
+		int[] nDominated = new int[popList.size()];
+		for(int k = 0; k < popList.size(); k ++) {
+			for(int j = k + 1; j < popList.size(); j ++) {
+				int result = popList.get(k).compareInd(popList.get(j));
+				if(2 == result) nDominated[k] ++;
+				else if(1 == result) nDominated[j] ++;
+			}
+		}
+		for(int n = 0 ; n < popList.size(); n ++) {
+			if(0 == nDominated[n]) popFront.add(popList.get(n).objectiveValue);
+		}
+		return popFront;
+	}
+	*/
 
 	public void updateFixWeight(SOP subProblem,boolean delivery) {
 		if(subProblem.sectorialIndex != subProblem.ind.belongSubproblemIndex) {

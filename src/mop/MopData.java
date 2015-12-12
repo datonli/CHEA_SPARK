@@ -3,6 +3,7 @@ package mop;
 import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -205,4 +206,11 @@ public class MopData implements DataOperator {
         dataOutputStream.close();
         return true;
 	}
+
+    public void recordTimeFile(String filename,String str) throws IOException {
+        FileWriter writer = new FileWriter(filename,true);
+        writer.write(str);
+        writer.close();
+    }
+
 }

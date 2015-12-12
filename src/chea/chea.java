@@ -1,6 +1,7 @@
 package chea;
 
 import java.io.IOException;
+import java.io.FileWriter;
 
 import mop.MOP;
 import mop.CHEAMOP;
@@ -48,10 +49,9 @@ public class chea {
 	}
 
 
-		public static void main(String[] args) throws IOException{
-			int popSize = 406;
-			int hyperplaneIntercept = 27;
-			//int hyperplaneIntercept = popSize - 1;
+		public static void main(String[] args) throws IOException,InterruptedException {
+			int popSize = 105;
+			int hyperplaneIntercept = 13;
 			int iterations = 400;
 			int neighbourNum = 2;		
 			AProblem problem = DTLZ1.getInstance();
@@ -63,9 +63,16 @@ public class chea {
 			try {
 				igdOper.ps = igdOper.loadPfront(filename);
 			} catch (IOException e) {}
+	        long startTime = System.currentTimeMillis();
+	        long igdTime = 0;
+			long sleepTime = 0;
 			for(int i = 0 ; i < iterations; i ++) {
-				//System.out.println("The " + i + "th iteration !!");
+				long sleepTimeStart = System.currentTimeMillis();
+				//Thread.sleep(2500);
+				sleepTime += System.currentTimeMillis() - sleepTimeStart;
+				System.out.println("The " + i + "th iteration !!");
 				mop.updatePop(1);
+				long igdStartTime = System.currentTimeMillis();
 				List<double[]> real = new ArrayList<double[]>(mop.sops.size());
 				for(int j = 0; j < mop.sops.size(); j ++) {
 					real.add(mop.sops.get(j).ind.objectiveValue);
@@ -74,7 +81,13 @@ public class chea {
 				genDisIGD[0] = i;
 				genDisIGD[1] = igdOper.calcIGD(real);
 				igdOper.igd.add(genDisIGD);
+				igdTime += System.currentTimeMillis() - igdStartTime ;
 			}
+			long recordTime = System.currentTimeMillis()-startTime - igdTime;
+			System.out.println("Running time is : " + recordTime);
+			System.out.println("Sleep time is : " + sleepTime);
+			recordTimeFile("/home/laboratory/workspace/moead_parallel/experiments/recordTime.txt","\nDTLZ1 chea serial time : " + recordTime + ",sleepTime is : " + sleepTime);
+
 	      	filename = "/home/laboratory/workspace/moead_parallel/experiments/DTLZ1/CHEA_IGD_DTLZ1_3.txt";
 			try {
 				igdOper.saveIGD(filename);	
@@ -85,5 +98,11 @@ public class chea {
 	        mop.writeAll2File(filename);
 		    System.out.println("done!");
 		}
+
+		  public static void recordTimeFile(String filename,String str) throws IOException {
+		       FileWriter writer = new FileWriter(filename,true);
+		       writer.write(str);
+		       writer.close();
+		  }
 }
 
